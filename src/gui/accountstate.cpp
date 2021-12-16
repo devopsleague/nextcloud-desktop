@@ -171,6 +171,7 @@ void AccountState::freshConnectionAttempt()
 void AccountState::signIn()
 {
     if (_state == SignedOut) {
+        _signInTimer.stop();
         _waitingForNewCredentials = false;
         setState(Disconnected);
     }
@@ -219,6 +220,22 @@ void AccountState::setDesktopNotificationsAllowed(bool isAllowed)
     
     _isDesktopNotificationsAllowed = isAllowed;
     emit desktopNotificationsAllowedChanged();
+}
+
+void AccountState::startSignInTimer()
+{
+    if (!isSignedOut() || _signInTimer.isActive()) {
+        return;
+    }
+    connect(&_signInTimer, &QTimer::timeout, this, &AccountState::trySignIn);
+    _signInTimer.setInterval(30 * 1000);
+    _signInTimer.start();
+    QTimer::singleShot(0, this, &AccountState::trySignIn);
+}
+
+AccountState::ConnectionStatus AccountState::lastConnectionStatus() const
+{
+    return _lastConnectionValidatorStatus;
 }
 
 void AccountState::checkConnectivity()
@@ -282,8 +299,11 @@ void AccountState::slotConnectionValidatorResult(ConnectionValidator::Status sta
 {
     if (isSignedOut()) {
         qCWarning(lcAccountState) << "Signed out, ignoring" << status << _account->url().toString();
+        _lastConnectionValidatorStatus = AccountState::ConnectionStatus::Undefined;
         return;
     }
+
+    _lastConnectionValidatorStatus = status;
 
     // Come online gradually from 503 or maintenance mode
     if (status == ConnectionValidator::Connected
@@ -439,6 +459,17 @@ void AccountState::fetchNavigationApps(){
     connect(job, &OcsNavigationAppsJob::etagResponseHeaderReceived, this, &AccountState::slotEtagResponseHeaderReceived);
     connect(job, &OcsNavigationAppsJob::ocsError, this, &AccountState::slotOcsError);
     job->getNavigationApps();
+}
+
+void AccountState::trySignIn()
+{
+    _signInTimer.stop();
+
+    if (isSignedOut() && account()) {
+        account()->resetRejectedCertificates();
+        signIn();
+        return;
+    }
 }
 
 void AccountState::slotEtagResponseHeaderReceived(const QByteArray &value, int statusCode){

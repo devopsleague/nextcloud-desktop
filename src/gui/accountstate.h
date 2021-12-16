@@ -171,6 +171,10 @@ public:
     */
     void setDesktopNotificationsAllowed(bool isAllowed);
 
+    void startSignInTimer();
+
+    ConnectionStatus lastConnectionStatus() const;
+
 public slots:
     /// Triggers a ping to the server to update state and
     /// connection status and errors.
@@ -179,6 +183,8 @@ public slots:
 private:
     void setState(State state);
     void fetchNavigationApps();
+
+    void trySignIn();
 
 signals:
     void stateChanged(State state);
@@ -205,6 +211,7 @@ private:
     AccountPtr _account;
     State _state;
     ConnectionStatus _connectionStatus;
+    ConnectionStatus _lastConnectionValidatorStatus = ConnectionStatus::Undefined;
     QStringList _connectionErrors;
     bool _waitingForNewCredentials;
     QDateTime _timeOfLastETagCheck;
@@ -218,6 +225,8 @@ private:
      * timer exceeds the _maintenanceToConnectedDelay value.
      */
     QElapsedTimer _timeSinceMaintenanceOver;
+
+    QTimer _signInTimer;
 
     /**
      * Milliseconds for which to delay reconnection after 503/maintenance.

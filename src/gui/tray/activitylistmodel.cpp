@@ -336,39 +336,39 @@ void ActivityListModel::activitiesReceived(const QJsonDocument &json, int status
 
         Activity a;
         a._type = Activity::ActivityType;
-        a._objectType = json.value("object_type").toString();
+        a._objectType = json.value(QStringLiteral("object_type")).toString();
         a._accName = ast->account()->displayName();
-        a._id = json.value("activity_id").toInt();
-        a._fileAction = json.value("type").toString();
-        a._subject = json.value("subject").toString();
-        a._message = json.value("message").toString();
-        a._file = json.value("object_name").toString();
-        a._link = QUrl(json.value("link").toString());
-        a._dateTime = QDateTime::fromString(json.value("datetime").toString(), Qt::ISODate);
-        a._icon = json.value("icon").toString();
+        a._id = json.value(QStringLiteral("activity_id")).toInt();
+        a._fileAction = json.value(QStringLiteral("type")).toString();
+        a._subject = json.value(QStringLiteral("subject")).toString();
+        a._message = json.value(QStringLiteral("message")).toString();
+        a._file = json.value(QStringLiteral("object_name")).toString();
+        a._link = QUrl(json.value(QStringLiteral("link")).toString());
+        a._dateTime = QDateTime::fromString(json.value(QStringLiteral("datetime")).toString(), Qt::ISODate);
+        a._icon = json.value(QStringLiteral("icon")).toString();
 
-        auto richSubjectData = json.value("subject_rich").toArray();
+        auto richSubjectData = json.value(QStringLiteral("subject_rich")).toArray();
         a._subjectRich = richSubjectData[0].toString();
         auto parameters = richSubjectData[1].toObject();
-        const QRegularExpression subjectRichParameterRe("({[a-zA-Z0-9]*})");
-        const QRegularExpression subjectRichParameterBracesRe("[{}]");
+        const QRegularExpression subjectRichParameterRe(QStringLiteral("({[a-zA-Z0-9]*})"));
+        const QRegularExpression subjectRichParameterBracesRe(QStringLiteral("[{}]"));
 
         for (auto i = parameters.begin(); i != parameters.end(); i++) {
             const auto parameterJsonObject = i.value().toObject();
             Activity::RichSubjectParameter parameter = {
-                parameterJsonObject.value("type").toString(),
-                parameterJsonObject.value("id").toString(),
-                parameterJsonObject.value("name").toString(),
+                parameterJsonObject.value(QStringLiteral("type")).toString(),
+                parameterJsonObject.value(QStringLiteral("id")).toString(),
+                parameterJsonObject.value(QStringLiteral("name")).toString(),
                 QString(),
                 QUrl(),
             };
 
-            if(parameter.type == "file") {
-                parameter.path = parameterJsonObject.value("path").toString();
+            if(parameter.type == QStringLiteral("file")) {
+                parameter.path = parameterJsonObject.value(QStringLiteral("path")).toString();
             }
 
-            if(parameter.type == "file" && parameterJsonObject.contains("link")) {
-                parameter.link = QUrl(parameterJsonObject.value("link").toString());
+            if(parameter.type == "file" && parameterJsonObject.contains(QStringLiteral("link"))) {
+                parameter.link = QUrl(parameterJsonObject.value(QStringLiteral("link")).toString());
             }
 
             a._subjectRichParameters[i.key()] = parameter;

@@ -378,8 +378,8 @@ void ActivityListModel::activitiesReceived(const QJsonDocument &json, int status
             QRegularExpressionMatchIterator i = subjectRichParameterRe.globalMatch(a._subjectRich);
 
             while (i.hasNext()) {
-                const QRegularExpressionMatch match = i.next();
-                QString word = match.captured(1);
+                const auto match = i.next();
+                auto word = match.captured(1);
                 word.remove(subjectRichParameterBracesRe);
 
                 Q_ASSERT(a._subjectRichParameters.contains(word));

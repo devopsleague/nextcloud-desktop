@@ -923,14 +923,14 @@ void PropagateDownloadFile::slotGetFinished()
 }
 
 void PropagateDownloadFile::slotChecksumFail(const QString &errMsg,
-    const QByteArray &calculatedChecksumType, const QByteArray &calculatedChecksum, ValidateChecksumHeader::FailureReason reason)
+    const QByteArray &calculatedChecksumType, const QByteArray &calculatedChecksum, const ValidateChecksumHeader::FailureReason reason)
 {
     if (reason == ValidateChecksumHeader::FailureReason::ChecksumMismatch && propagator()->account()->isChecksumRecalculateRequestSupported()) {
             const QByteArray calculatedChecksumHeader(calculatedChecksumType + ':' + calculatedChecksum);
             const QString fullRemotePathForFile(propagator()->fullRemotePath(_isEncrypted ? _item->_encryptedFileName : _item->_file));
             auto *job = new SimpleFileJob(propagator()->account(), fullRemotePathForFile);
             QObject::connect(job, &SimpleFileJob::finishedSignal, this,
-                [this, calculatedChecksumHeader, errMsg](QNetworkReply *reply) { processChecksumRecalculate(reply, calculatedChecksumHeader, errMsg);
+                [this, calculatedChecksumHeader, errMsg](const QNetworkReply *reply) { processChecksumRecalculate(reply, calculatedChecksumHeader, errMsg);
             });
 
             qCWarning(lcPropagateDownload) << "Checksum validation has failed for file:" << fullRemotePathForFile
@@ -944,7 +944,7 @@ void PropagateDownloadFile::slotChecksumFail(const QString &errMsg,
     checksumValidateFailedAbortDownload(errMsg);
 }
 
-void PropagateDownloadFile::processChecksumRecalculate(QNetworkReply *reply, const QByteArray &originalChecksumHeader, const QString &errorMessage)
+void PropagateDownloadFile::processChecksumRecalculate(const QNetworkReply *reply, const QByteArray &originalChecksumHeader, const QString &errorMessage)
 {
     if (reply->error() != QNetworkReply::NoError) {
         qCCritical(lcPropagateDownload) << "Checksum recalculation has failed for file:" << reply->url()

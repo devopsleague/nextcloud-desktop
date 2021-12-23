@@ -114,6 +114,38 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
     if (!ast && _accountState != ast.data())
         return QVariant();
 
+    const auto getFilePath = [&]() {
+        if (!a._file.isEmpty()) {
+            const auto folder = FolderMan::instance()->folder(a._folder);
+
+            QString relPath(a._file);
+            if (folder) {
+                relPath.prepend(folder->remotePath());
+            }
+
+            const auto localFiles = FolderMan::instance()->findFileInLocalFolders(relPath, ast->account());
+
+            if (localFiles.isEmpty()) {
+                qWarning("File not local folders while processing absolute path request.");
+                return QString();
+            }
+
+            // If this is an E2EE file or folder, pretend we got no path, this leads to
+            // hiding the share button which is what we want
+            if (folder) {
+                SyncJournalFileRecord rec;
+                folder->journalDb()->getFileRecord(a._file.mid(1), &rec);
+                if (rec.isValid() && (rec._isE2eEncrypted || !rec._e2eMangledName.isEmpty())) {
+                    return QString();
+                }
+            }
+
+            return localFiles.constFirst();
+        }
+        qWarning("Received a path request for an activity without a file path.");
+        return QString();
+    };
+
     switch (role) {
     case DisplayPathRole:
         if (!a._file.isEmpty()) {
@@ -133,53 +165,9 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         }
         return QString();
     case PathRole:
-        if (!a._file.isEmpty()) {
-            const auto folder = FolderMan::instance()->folder(a._folder);
-
-            QString relPath(a._file);
-            if (folder) {
-                relPath.prepend(folder->remotePath());
-            }
-
-            // get relative path to the file so we can open it in the file manager
-            const auto localFiles = FolderMan::instance()->findFileInLocalFolders(QFileInfo(relPath).path(), ast->account());
-
-            if (localFiles.isEmpty()) {
-                return QString();
-            }
-
-            // If this is an E2EE file or folder, pretend we got no path, this leads to
-            // hiding the share button which is what we want
-            if (folder) {
-                SyncJournalFileRecord rec;
-                folder->journalDb()->getFileRecord(a._file.mid(1), &rec);
-                if (rec.isValid() && (rec._isE2eEncrypted || !rec._e2eMangledName.isEmpty())) {
-                    return QString();
-                }
-            }
-
-            return QUrl::fromLocalFile(localFiles.constFirst());
-        }
-        return QString();
-    case AbsolutePathRole: {
-        const auto folder = FolderMan::instance()->folder(a._folder);
-        QString relPath(a._file);
-        if (!a._file.isEmpty()) {
-            if (folder) {
-                relPath.prepend(folder->remotePath());
-            }
-            const auto localFiles = FolderMan::instance()->findFileInLocalFolders(relPath, ast->account());
-            if (!localFiles.empty()) {
-                return localFiles.constFirst();
-            } else {
-                qWarning("File not local folders while processing absolute path request.");
-                return QString();
-            }
-        } else {
-            qWarning("Received an absolute path request for an activity without a file path.");
-            return QString();
-        }
-    }
+        return QUrl::fromLocalFile(QFileInfo(getFilePath()).path());
+    case AbsolutePathRole:
+        return getFilePath();
     case ActionsLinksRole: {
         QList<QVariant> customList;
         foreach (ActivityLink activityLink, a._links) {

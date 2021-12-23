@@ -506,7 +506,7 @@ void User::processCompletedSyncItem(const Folder *folder, const SyncFileItemPtr 
     activity._folder = folder->alias();
     activity._fileAction = "";
 
-    auto fileName = QFileInfo(item->_originalFile).fileName();
+    const auto fileName = QFileInfo(item->_originalFile).fileName();
 
     if (item->_instruction == CSYNC_INSTRUCTION_REMOVE) {
         activity._fileAction = "file_deleted";

@@ -370,7 +370,7 @@ void ActivityListModel::activitiesReceived(const QJsonDocument &json, int status
         }
 
         if(!a._subjectRich.isEmpty()) {
-            QRegularExpressionMatchIterator i = subjectRichParameterRe.globalMatch(a._subjectRich);
+            auto i = subjectRichParameterRe.globalMatch(a._subjectRich);
 
             while (i.hasNext()) {
                 const auto match = i.next();

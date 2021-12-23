@@ -343,45 +343,49 @@ void ActivityListModel::activitiesReceived(const QJsonDocument &json, int status
         a._icon = json.value(QStringLiteral("icon")).toString();
 
         auto richSubjectData = json.value(QStringLiteral("subject_rich")).toArray();
-        a._subjectRich = richSubjectData[0].toString();
-        auto parameters = richSubjectData[1].toObject();
-        const QRegularExpression subjectRichParameterRe(QStringLiteral("({[a-zA-Z0-9]*})"));
-        const QRegularExpression subjectRichParameterBracesRe(QStringLiteral("[{}]"));
+        Q_ASSERT(richSubjectData.size() > 1);
 
-        for (auto i = parameters.begin(); i != parameters.end(); i++) {
-            const auto parameterJsonObject = i.value().toObject();
-            Activity::RichSubjectParameter parameter = {
-                parameterJsonObject.value(QStringLiteral("type")).toString(),
-                parameterJsonObject.value(QStringLiteral("id")).toString(),
-                parameterJsonObject.value(QStringLiteral("name")).toString(),
-                QString(),
-                QUrl(),
-            };
+        if(richSubjectData.size() > 1) {
+            a._subjectRich = richSubjectData[0].toString();
+            auto parameters = richSubjectData[1].toObject();
+            const QRegularExpression subjectRichParameterRe(QStringLiteral("({[a-zA-Z0-9]*})"));
+            const QRegularExpression subjectRichParameterBracesRe(QStringLiteral("[{}]"));
 
-            if(parameter.type == QStringLiteral("file")) {
-                parameter.path = parameterJsonObject.value(QStringLiteral("path")).toString();
+            for (auto i = parameters.begin(); i != parameters.end(); i++) {
+                const auto parameterJsonObject = i.value().toObject();
+                Activity::RichSubjectParameter parameter = {
+                    parameterJsonObject.value(QStringLiteral("type")).toString(),
+                    parameterJsonObject.value(QStringLiteral("id")).toString(),
+                    parameterJsonObject.value(QStringLiteral("name")).toString(),
+                    QString(),
+                    QUrl(),
+                };
+
+                if(parameter.type == QStringLiteral("file")) {
+                    parameter.path = parameterJsonObject.value(QStringLiteral("path")).toString();
+                }
+
+                if(parameter.type == "file" && parameterJsonObject.contains(QStringLiteral("link"))) {
+                    parameter.link = QUrl(parameterJsonObject.value(QStringLiteral("link")).toString());
+                }
+
+                a._subjectRichParameters[i.key()] = parameter;
             }
 
-            if(parameter.type == "file" && parameterJsonObject.contains(QStringLiteral("link"))) {
-                parameter.link = QUrl(parameterJsonObject.value(QStringLiteral("link")).toString());
+            if(!a._subjectRich.isEmpty()) {
+                auto i = subjectRichParameterRe.globalMatch(a._subjectRich);
+
+                while (i.hasNext()) {
+                    const auto match = i.next();
+                    auto word = match.captured(1);
+                    word.remove(subjectRichParameterBracesRe);
+
+                    Q_ASSERT(a._subjectRichParameters.contains(word));
+                    a._subjectRich = a._subjectRich.replace(match.captured(1), a._subjectRichParameters[word].name);
+                }
+
+                a._subjectDisplay = a._subjectRich;
             }
-
-            a._subjectRichParameters[i.key()] = parameter;
-        }
-
-        if(!a._subjectRich.isEmpty()) {
-            auto i = subjectRichParameterRe.globalMatch(a._subjectRich);
-
-            while (i.hasNext()) {
-                const auto match = i.next();
-                auto word = match.captured(1);
-                word.remove(subjectRichParameterBracesRe);
-
-                Q_ASSERT(a._subjectRichParameters.contains(word));
-                a._subjectRich = a._subjectRich.replace(match.captured(1), a._subjectRichParameters[word].name);
-            }
-
-            a._subjectDisplay = a._subjectRich;
         }
 
         list.append(a);

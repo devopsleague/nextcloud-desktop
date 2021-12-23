@@ -58,6 +58,7 @@ QHash<int, QByteArray> ActivityListModel::roleNames() const
     roles[DisplayPathRole] = "displayPath";
     roles[PathRole] = "path";
     roles[AbsolutePathRole] = "absolutePath";
+    roles[DisplayLocationRole] = "displayLocation";
     roles[LinkRole] = "link";
     roles[MessageRole] = "message";
     roles[ActionRole] = "type";
@@ -146,8 +147,7 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         return QString();
     };
 
-    switch (role) {
-    case DisplayPathRole:
+    const auto getDisplayPath = [&]() {
         if (!a._file.isEmpty()) {
             auto folder = FolderMan::instance()->folder(a._folder);
             QString relPath(a._file);
@@ -164,10 +164,17 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
             }
         }
         return QString();
+    };
+
+    switch (role) {
+    case DisplayPathRole:
+        return getDisplayPath();
     case PathRole:
         return QUrl::fromLocalFile(QFileInfo(getFilePath()).path());
     case AbsolutePathRole:
         return getFilePath();
+    case DisplayLocationRole:
+        return QFileInfo(getDisplayPath()).path();
     case ActionsLinksRole: {
         QList<QVariant> customList;
         foreach (ActivityLink activityLink, a._links) {

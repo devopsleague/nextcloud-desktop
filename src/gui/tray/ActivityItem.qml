@@ -21,9 +21,9 @@ MouseArea {
         color: (parent.containsMouse ? Style.lightHover : "transparent")
     }
 
-    ToolTip.visible: containsMouse && displayPath.length > 0
+    ToolTip.visible: containsMouse && displayLocation !== "" && displayLocation !== "."
     ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
-    ToolTip.text: qsTr("In %1").arg(displayPath)
+    ToolTip.text: qsTr("In %1").arg(displayLocation)
         
     RowLayout {
         id: activityItem

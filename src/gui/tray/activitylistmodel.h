@@ -55,6 +55,7 @@ public:
         DisplayPathRole,
         PathRole,
         AbsolutePathRole,
+        DisplayLocationRole, // Not the path to the file but its folder
         LinkRole,
         PointInTimeRole,
         AccountConnectedRole,

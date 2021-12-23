@@ -119,20 +119,15 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         if (!a._file.isEmpty()) {
             const auto folder = FolderMan::instance()->folder(a._folder);
 
-            QString relPath(a._file);
-            if (folder) {
-                relPath.prepend(folder->remotePath());
-            }
+            const QString relPath = folder ? folder->remotePath() + a._file : a._file;
 
             const auto localFiles = FolderMan::instance()->findFileInLocalFolders(relPath, ast->account());
 
             if (localFiles.isEmpty()) {
-                qWarning("File not local folders while processing absolute path request.");
                 return QString();
             }
 
-            // If this is an E2EE file or folder, pretend we got no path, this leads to
-            // hiding the share button which is what we want
+            // If this is an E2EE file or folder, pretend we got no path, hiding the share button which is what we want
             if (folder) {
                 SyncJournalFileRecord rec;
                 folder->journalDb()->getFileRecord(a._file.mid(1), &rec);
@@ -143,18 +138,17 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
 
             return localFiles.constFirst();
         }
-        qWarning("Received a path request for an activity without a file path.");
         return QString();
     };
 
     const auto getDisplayPath = [&]() {
         if (!a._file.isEmpty()) {
-            auto folder = FolderMan::instance()->folder(a._folder);
-            QString relPath(a._file);
-            if (folder) {
-                relPath.prepend(folder->remotePath());
-            }
+            const auto folder = FolderMan::instance()->folder(a._folder);
+
+            QString relPath = folder ? folder->remotePath() + a._file : a._file;
+
             const auto localFiles = FolderMan::instance()->findFileInLocalFolders(relPath, ast->account());
+
             if (localFiles.count() > 0) {
                 if (relPath.startsWith('/') || relPath.startsWith('\\')) {
                     return relPath.remove(0, 1);
@@ -353,39 +347,30 @@ void ActivityListModel::activitiesReceived(const QJsonDocument &json, int status
 
             for (auto i = parameters.begin(); i != parameters.end(); i++) {
                 const auto parameterJsonObject = i.value().toObject();
-                Activity::RichSubjectParameter parameter = {
+                const Activity::RichSubjectParameter parameter = {
                     parameterJsonObject.value(QStringLiteral("type")).toString(),
                     parameterJsonObject.value(QStringLiteral("id")).toString(),
                     parameterJsonObject.value(QStringLiteral("name")).toString(),
-                    QString(),
-                    QUrl(),
+                    parameterJsonObject.contains(QStringLiteral("path")) ? parameterJsonObject.value(QStringLiteral("path")).toString() : QString(),
+                    parameterJsonObject.contains(QStringLiteral("link")) ? QUrl(parameterJsonObject.value(QStringLiteral("link")).toString()) : QUrl(),
                 };
-
-                if(parameter.type == QStringLiteral("file")) {
-                    parameter.path = parameterJsonObject.value(QStringLiteral("path")).toString();
-                }
-
-                if(parameter.type == "file" && parameterJsonObject.contains(QStringLiteral("link"))) {
-                    parameter.link = QUrl(parameterJsonObject.value(QStringLiteral("link")).toString());
-                }
 
                 a._subjectRichParameters[i.key()] = parameter;
             }
 
-            if(!a._subjectRich.isEmpty()) {
-                auto i = subjectRichParameterRe.globalMatch(a._subjectRich);
+            auto displayString = a._subjectRich;
+            auto i = subjectRichParameterRe.globalMatch(displayString);
 
-                while (i.hasNext()) {
-                    const auto match = i.next();
-                    auto word = match.captured(1);
-                    word.remove(subjectRichParameterBracesRe);
+            while (i.hasNext()) {
+                const auto match = i.next();
+                auto word = match.captured(1);
+                word.remove(subjectRichParameterBracesRe);
 
-                    Q_ASSERT(a._subjectRichParameters.contains(word));
-                    a._subjectRich = a._subjectRich.replace(match.captured(1), a._subjectRichParameters[word].name);
-                }
-
-                a._subjectDisplay = a._subjectRich;
+                Q_ASSERT(a._subjectRichParameters.contains(word));
+                displayString = displayString.replace(match.captured(1), a._subjectRichParameters[word].name);
             }
+
+            a._subjectDisplay = displayString;
         }
 
         list.append(a);

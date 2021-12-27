@@ -71,10 +71,10 @@ public:
     explicit SimpleFileJob(AccountPtr account, const QString &filePath, QObject *parent = nullptr);
 
     QNetworkReply *startRequest(
-        const QByteArray &verb, const QNetworkRequest req = QNetworkRequest(), const QIODevice *requestBody = nullptr);
+        const QByteArray &verb, const QNetworkRequest req = QNetworkRequest(), QIODevice *requestBody = nullptr);
 
     QNetworkReply *startRequest(const QByteArray &verb, const QUrl &url, const QNetworkRequest req = QNetworkRequest(),
-        const QIODevice *requestBody = nullptr);
+        QIODevice *requestBody = nullptr);
 
 signals:
     void finishedSignal(QNetworkReply *reply);

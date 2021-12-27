@@ -1091,13 +1091,13 @@ SimpleFileJob::SimpleFileJob(AccountPtr account, const QString &filePath, QObjec
 }
 
 QNetworkReply *SimpleFileJob::startRequest(
-    const QByteArray &verb, const QNetworkRequest req, const QIODevice *requestBody)
+    const QByteArray &verb, const QNetworkRequest req, QIODevice *requestBody)
 {
     return startRequest(verb, makeDavUrl(path()), req, requestBody);
 }
 
 QNetworkReply *SimpleFileJob::startRequest(
-    const QByteArray &verb, const QUrl &url, const QNetworkRequest req, const QIODevice *requestBody)
+    const QByteArray &verb, const QUrl &url, const QNetworkRequest req, QIODevice *requestBody)
 {
     _verb = verb;
     const auto reply = sendRequest(verb, url, req, requestBody);

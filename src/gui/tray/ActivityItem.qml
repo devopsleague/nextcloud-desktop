@@ -21,7 +21,7 @@ MouseArea {
         color: (parent.containsMouse ? Style.lightHover : "transparent")
     }
 
-    ToolTip.visible: containsMouse && displayLocation !== "" && displayLocation !== "."
+    ToolTip.visible: containsMouse && displayLocation !== ""
     ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
     ToolTip.text: qsTr("In %1").arg(displayLocation)
         

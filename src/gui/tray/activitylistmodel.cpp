@@ -167,8 +167,10 @@ QVariant ActivityListModel::data(const QModelIndex &index, int role) const
         return QUrl::fromLocalFile(QFileInfo(getFilePath()).path());
     case AbsolutePathRole:
         return getFilePath();
-    case DisplayLocationRole:
-        return QFileInfo(getDisplayPath()).path();
+    case DisplayLocationRole: {
+        auto displayPath = QFileInfo(getDisplayPath()).path();
+        return displayPath == "." || displayPath == "/" ? QString() : QFileInfo(getDisplayPath()).path();
+    }
     case ActionsLinksRole: {
         QList<QVariant> customList;
         foreach (ActivityLink activityLink, a._links) {
